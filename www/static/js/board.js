@@ -31,6 +31,7 @@
   function pieceEl(code) {
     const el = document.createElement("div");
     el.className = "nb-piece " + (code[0] === "w" ? "white" : "black");
+    el.dataset.code = code;
     const glyph = () => { el.textContent = UNICODE[code[1]]; el.classList.add("glyph"); };
     if (useGlyphs) { glyph(); return el; }
     const img = document.createElement("img");
@@ -154,7 +155,6 @@
       const preSq = new Set();
       this.premoves.forEach(m => { preSq.add(m.from); preSq.add(m.to); });
       for (const [name, sq] of Object.entries(this.squares)) {
-        sq.querySelector(".nb-piece")?.remove();
         sq.querySelector(".nb-hint")?.remove();
         sq.querySelector(".nb-badge")?.remove();
         sq.classList.toggle("last", !!this.lastMove && (this.lastMove.slice(0, 2) === name || this.lastMove.slice(2, 4) === name));
@@ -162,7 +162,10 @@
         sq.classList.toggle("selected", this.selected === name);
         sq.classList.toggle("premove", preSq.has(name));
         const code = shown[name];
-        if (code) sq.appendChild(pieceEl(code));
+        // só troca a peça se mudou (evita recriar as 32 imagens a cada toque = tremida/piscada)
+        const cur = sq.querySelector(".nb-piece");
+        if (cur && (!code || cur.dataset.code !== code || cur.classList.contains("nb-dragging"))) { cur.remove(); }
+        if (code && !sq.querySelector(".nb-piece")) sq.appendChild(pieceEl(code));
         if (this.badge && this.badge.square === name) {
           const b = document.createElement("div");
           b.className = "nb-badge";
@@ -316,23 +319,30 @@
       const pieceNode = this.squares[square].querySelector(".nb-piece");
       if (!pieceNode) return;
       const size = this.squares[square].getBoundingClientRect().width;
-      const ghost = pieceNode.cloneNode(true);
+      this.drag = { from: square, ghost: null, pieceNode, size, wasSelected, moved: false, x0: e.clientX, y0: e.clientY };
+    }
+
+    _makeGhost(x, y) {
+      const d = this.drag;
+      const ghost = d.pieceNode.cloneNode(true);
       ghost.classList.add("nb-ghost");
-      ghost.style.width = ghost.style.height = size + "px";
+      ghost.style.width = ghost.style.height = d.size + "px";
       document.body.appendChild(ghost);
-      pieceNode.classList.add("nb-dragging");
-      this.drag = { from: square, ghost, size, wasSelected, moved: false, x0: e.clientX, y0: e.clientY };
-      this._placeGhost(e.clientX, e.clientY);
+      d.pieceNode.classList.add("nb-dragging");
+      d.ghost = ghost;
+      this._placeGhost(x, y);
     }
 
     _placeGhost(x, y) {
       const d = this.drag;
+      if (!d.ghost) return;
       d.ghost.style.transform = `translate(${x - d.size / 2}px, ${y - d.size / 2}px)`;
     }
 
     _moveDrag(e) {
       if (!this.drag) return;
-      if (Math.abs(e.clientX - this.drag.x0) + Math.abs(e.clientY - this.drag.y0) > 4) this.drag.moved = true;
+      if (!this.drag.moved && Math.abs(e.clientX - this.drag.x0) + Math.abs(e.clientY - this.drag.y0) > 8) { this.drag.moved = true; this._makeGhost(e.clientX, e.clientY); }
+      if (!this.drag.moved) return;
       this._placeGhost(e.clientX, e.clientY);
       const over = this._squareAt(e.clientX, e.clientY);
       Object.values(this.squares).forEach(s => s.classList.toggle("hover", s.dataset.square === over && this.drag.moved));
@@ -342,7 +352,8 @@
       if (!this.drag) return;
       const d = this.drag;
       this.drag = null;
-      d.ghost.remove();
+      if (d.ghost) d.ghost.remove();
+      d.pieceNode.classList.remove("nb-dragging");
       Object.values(this.squares).forEach(s => s.classList.remove("hover"));
       const to = this._squareAt(e.clientX, e.clientY);
 

@@ -1339,3 +1339,13 @@ input, select, textarea { font-size: 16px; }              /* o iPhone dá zoom e
   .toast, #toast { bottom: calc(80px + env(safe-area-inset-bottom)); }
 }
 @media (max-width: 720px) and (orientation: landscape) { #tabs button span { display: none !important; } #tabs button { min-height: 40px; } body { padding-bottom: calc(52px + env(safe-area-inset-bottom)); } }
+
+/* ---- sem tremida ao tocar no tabuleiro ---- */
+.nb-sq { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: none; }
+.nb-piece { will-change: auto; }
+.nb-piece img { filter: none; }
+@media (hover: none) {
+  .nb-sq:has(.nb-hint):hover .nb-hint.nb-dot::after { width: 34%; height: 34%; background: rgba(8, 14, 28, .42); }
+  .nb-sq:has(.nb-hint.nb-cap):hover { box-shadow: none; }
+  .btn:hover:not(:disabled) { transform: none; }
+}
