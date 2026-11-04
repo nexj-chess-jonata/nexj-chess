@@ -1,0 +1,23 @@
+from playwright.sync_api import sync_playwright
+errs=[]
+with sync_playwright() as p:
+    b=p.chromium.launch(); pg=b.new_page(viewport={"width":430,"height":900})
+    pg.on("console",lambda m: errs.append(m.text) if m.type=="error" else None); pg.on("pageerror",lambda e: errs.append("PAGEERROR "+str(e)))
+    pg.goto("http://localhost:8777/index.html"); pg.wait_for_selector("#authView",state="visible",timeout=15000)
+    pg.click('#authTabs [data-v=register]'); pg.fill('#registerForm [name=name]',"Jonata"); pg.fill('#registerForm [name=username]',"jonata"); pg.check('#regNoPass'); pg.click('#registerForm button[type=submit]')
+    pg.wait_for_function("document.querySelector('#recoveryModal').classList.contains('open')",timeout=8000); pg.check("#recOk"); pg.click("#recGo")
+    pg.wait_for_function("document.querySelector('#welcomeModal').classList.contains('open')",timeout=8000); pg.click("#chooseBeginner")
+    pg.wait_for_function("document.querySelector('#revealModal').classList.contains('open')",timeout=8000); pg.click("#revGo"); pg.wait_for_timeout(600)
+    pg.evaluate("document.querySelectorAll('.modal.open [data-close]').forEach(b=>b.click())")
+    pg.click('#tabs [data-view=tournaments]'); pg.wait_for_timeout(800)
+    pg.screenshot(path="/tmp/t1.png")
+    print("tab torneios:", pg.inner_text("#tournamentsView")[:200].replace("\n"," | "))
+    pg.click("text=Criar torneio"); pg.wait_for_timeout(700)
+    print("modal:", pg.evaluate("[...document.querySelectorAll('.modal.open')].map(m=>m.id+': '+m.innerText.slice(0,300).replace(/\\n/g,' | '))"))
+    pg.screenshot(path="/tmp/t3.png")
+    pg.evaluate("document.querySelectorAll('.modal.open [data-close]').forEach(b=>b.click())")
+    pg.click('#tabs [data-view=champ]'); pg.wait_for_timeout(800)
+    print("tab campeonatos:", pg.inner_text("#champBody")[:300].replace("\n"," | "))
+    pg.screenshot(path="/tmp/t2.png")
+    print("erros:", errs)
+    b.close()

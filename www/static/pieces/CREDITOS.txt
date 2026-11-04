@@ -1,0 +1,16 @@
+Conjuntos de peças (obtidos do projeto lichess-org/lila, pasta public/piece):
+
+cburnett ....... Colin M.L. Burnett ............ GPLv2+
+merida ......... Armando Hernandez Marroquin ... GPLv2+
+chessnut ....... Alexis Luengas ................ Apache 2.0
+fantasy ........ Maurizio Monge ................ MIT
+spatial ........ Maurizio Monge ................ MIT
+celtic ......... Maurizio Monge ................ MIT
+pixel .......... therealqtpi ................... AGPLv3+
+mpchess ........ Maxime Chupin ................. GPLv3+
+rhosgfx ........ RhosGFX ....................... CC0 1.0
+shapes ......... flugsio ....................... CC BY-SA 4.0
+kiwen-suwi ..... neverRare ..................... CC BY 4.0
+firi ........... James Faure ................... CC BY 4.0
+
+Os arquivos ficam dentro do jogo, então as peças aparecem mesmo sem internet.

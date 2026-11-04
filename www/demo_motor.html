@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nex-J Chess — teste do motor</title>
+<link rel="stylesheet" href="static/css/style.css">
+<style>
+  body { margin: 0; padding: 12px 12px 40px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  h1 { font-size: 18px; margin: 4px 0 0; }
+  .wrap { width: min(94vw, 560px); display: flex; flex-direction: column; gap: 10px; }
+  :root { --board: min(94vw, 560px); }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .row label { font-size: 13px; color: var(--muted); }
+  select, input[type=range] { background: var(--card); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 8px; font: inherit; }
+  input[type=range] { padding: 0; accent-color: var(--gold); flex: 1; min-width: 140px; }
+  .bar { display: flex; justify-content: space-between; font-size: 14px; }
+  #status { min-height: 22px; font-weight: 600; }
+  #moves { font-size: 13px; color: var(--muted); line-height: 1.5; max-height: 90px; overflow: auto; }
+  #info { font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+<h1>♞ Nex-J Chess — teste do motor do celular</h1>
+<div class="wrap">
+  <div class="row">
+    <label>Rating do bot: <b id="rv">1200</b></label>
+    <input type="range" id="rating" min="300" max="2800" step="100" value="1200">
+  </div>
+  <div class="row">
+    <label>Você joga de</label>
+    <select id="side"><option value="white">brancas</option><option value="black">pretas</option></select>
+    <select id="pers"><option value="">sem personalidade</option><option value="agressivo">agressivo</option><option value="tatico">tático</option><option value="solido">sólido</option><option value="posicional">posicional</option><option value="criativo">criativo</option></select>
+    <button class="btn gold" id="newGame">Nova partida</button>
+  </div>
+  <div class="bar"><span id="botName">Bot</span><span id="think"></span></div>
+  <div id="board"></div>
+  <div class="bar"><span>Você</span><span id="status"></span></div>
+  <div id="moves"></div>
+  <div id="info"></div>
+</div>
+<div class="promo" id="promo"></div>
+
+<script src="js/engine/chess.js"></script>
+<script src="js/engine/search.js"></script>
+<script src="js/engine/engine_api.js"></script>
+<script src="js/engine/engine_client.js"></script>
+<script src="static/js/board.js"></script>
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const C = NexChess;
+  let board = new C.Board(), mine = C.WHITE, busy = false, over = false, gen = 0;
+  const ui = new NexusBoard($("board"), { onMove: uci => play(uci) });
+
+  function legalUci() { return board.legalMoves().map(m => board.uci(m)); }
+
+  function render(animate) {
+    const last = board.moveStack.length ? board.uci(board.moveStack[board.moveStack.length - 1]) : null;
+    ui.setState({
+      fen: board.fen(), legal: board.turn === mine && !over ? legalUci() : [], lastMove: last,
+      check: board.isCheck() ? C.sqName(board.king(board.turn)) : null,
+      interactive: board.turn === mine && !busy && !over, animate: !!animate,
+      premoveOk: !over && board.turn !== mine,
+    });
+    // lista de lances
+    const b = new C.Board(board.startFen); const out = [];
+    board.moveStack.forEach((m, i) => { const s = b.san(m); out.push(i % 2 === 0 ? `${i / 2 + 1}. ${s}` : s); b.push(m); });
+    $("moves").textContent = out.join(" ");
+    const oc = board.outcome(true);
+    if (oc) {
+      over = true;
+      const names = { CHECKMATE: "xeque-mate", STALEMATE: "afogamento", INSUFFICIENT_MATERIAL: "material insuficiente", THREEFOLD_REPETITION: "repetição", FIFTY_MOVES: "regra dos 50 lances", FIVEFOLD_REPETITION: "repetição", SEVENTYFIVE_MOVES: "75 lances" };
+      const who = oc.winner === null ? "Empate" : (oc.winner === mine ? "Você venceu!" : "O bot venceu");
+      $("status").textContent = `${who} (${names[oc.termination] || oc.termination})`;
+    } else {
+      $("status").textContent = board.turn === mine ? (board.isCheck() ? "Sua vez — xeque!" : "Sua vez") : "";
+    }
+  }
+
+  async function play(uci) {
+    if (busy || over || board.turn !== mine) return;
+    try { board.pushUci(uci); } catch (_) { render(); return; }
+    render();
+    if (!over) botMove();
+  }
+
+  async function botMove() {
+    const g = gen;
+    busy = true; $("think").textContent = "pensando…";
+    ui.setState({ fen: board.fen(), legal: [], interactive: false, lastMove: ui.lastMove, premoveOk: true });
+    const t0 = performance.now();
+    const m = await NexEngine.chooseMove(board, { rating: +$("rating").value, personality: $("pers").value }, null);
+    const dt = Math.max(0, 450 - (performance.now() - t0));   // "tempo humano"
+    await new Promise(r => setTimeout(r, dt));
+    if (g !== gen) return;
+    busy = false; $("think").textContent = "";
+    board.push(m);
+    $("info").textContent = `último lance do bot em ${Math.round(performance.now() - t0)} ms`;
+    render(true);
+  }
+
+  function newGame() {
+    gen++; busy = false; over = false; board = new C.Board(); NexEngine.clear();
+    mine = $("side").value === "white" ? C.WHITE : C.BLACK;
+    ui.setOrientation($("side").value);
+    $("botName").textContent = `Bot ${$("rating").value}${$("pers").value ? " · " + $("pers").value : ""}`;
+    render();
+    if (board.turn !== mine) botMove();
+  }
+
+  $("rating").oninput = () => { $("rv").textContent = $("rating").value; };
+  $("newGame").onclick = newGame;
+  NexEngine.init("js/engine/");
+  newGame();
+  window.__demo = { get board() { return board; }, ui, play, newGame };
+})();
+</script>
+</body>
+</html>
