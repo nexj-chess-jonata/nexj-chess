@@ -197,6 +197,7 @@
         if (!name) return A().toast("Não consegui criar o backup.");
         const a = document.createElement("a"); a.href = "/api/backups/" + encodeURIComponent(name) + "/download"; a.download = name;
         document.body.appendChild(a); a.click(); a.remove();
+        try { localStorage.setItem("nj_last_export", String(Date.now())); document.getElementById("bkBanner")?.remove(); } catch (_) {}
         bk = r; renderBackups(); A().toast("Cópia salva. Guarde o arquivo no Drive, e-mail ou WhatsApp.");
       } catch (e) { A().toast(e.message); }
     };

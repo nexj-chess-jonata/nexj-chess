@@ -1127,6 +1127,7 @@
     switchView("play");
     loadRecent();
     loadStatus();
+    setTimeout(backupReminder, 1500);
     if (!user.placement.done && user.placement.played === 0) {
       $("welName").textContent = user.name;
       $("welcomeModal").classList.add("open");
@@ -1183,7 +1184,36 @@
   }
 
   function toggleMenu(force) {
-    $("userMenu").classList.toggle("open", force);
+    const m = $("userMenu");
+    if (window.innerWidth <= 700) {
+      const tb = document.querySelector(".topbar");
+      m.style.top = (tb ? tb.getBoundingClientRect().bottom + 6 : 60) + "px";
+    } else m.style.top = "";
+    m.classList.toggle("open", force);
+  }
+
+  /* ---------------- LEMBRETE DE BACKUP ---------------- */
+  function backupReminder() {
+    try {
+      const DAY = 864e5, now = Date.now();
+      let first = +localStorage.getItem("nj_first_seen") || 0;
+      if (!first) { first = now; localStorage.setItem("nj_first_seen", String(now)); }
+      const last = +localStorage.getItem("nj_last_export") || 0;
+      const snooze = +localStorage.getItem("nj_bk_snooze") || 0;
+      const due = last ? now - last > 7 * DAY : now - first > 2 * DAY;
+      if (!due || now < snooze || document.getElementById("bkBanner")) return;
+      const b = document.createElement("div");
+      b.id = "bkBanner";
+      b.innerHTML = '<span>💾 ' + (last ? "Faz mais de 7 dias que você não salva uma cópia." : "Salve uma cópia da sua conta para não perder seu progresso.") +
+        '</span><button data-a="go">Salvar agora</button><button data-a="later">Depois</button>';
+      b.addEventListener("click", e => {
+        const a = e.target.dataset.a; if (!a) return;
+        if (a === "later") localStorage.setItem("nj_bk_snooze", String(Date.now() + 3 * DAY));
+        b.remove();
+        if (a === "go") { switchView("settings"); NexSettings.focusBackup(); }
+      });
+      document.body.appendChild(b);
+    } catch (_) {}
   }
 
   /* ---------------- PERFIL ---------------- */
