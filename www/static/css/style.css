@@ -1349,3 +1349,13 @@ input, select, textarea { font-size: 16px; }              /* o iPhone dá zoom e
   .nb-sq:has(.nb-hint.nb-cap):hover { box-shadow: none; }
   .btn:hover:not(:disabled) { transform: none; }
 }
+
+/* menu do usuário sempre visível no celular */
+@media (max-width: 700px) {
+  .user-menu { position: fixed; right: 8px; left: auto; min-width: 0; width: min(260px, calc(100vw - 16px)); max-height: 80vh; overflow: auto; z-index: 200; }
+}
+#bkBanner { position: fixed; left: 8px; right: 8px; bottom: calc(10px + env(safe-area-inset-bottom)); z-index: 150; display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  background: var(--bg-2); border: 1px solid rgba(212,168,67,.55); border-radius: 14px; padding: 10px 12px; box-shadow: 0 10px 30px rgba(0,0,0,.5); font-size: 14px; }
+#bkBanner span { flex: 1 1 100%; }
+#bkBanner button { border: 1px solid var(--line); background: var(--card-2); color: var(--text); border-radius: 10px; padding: 8px 14px; font-size: 14px; }
+#bkBanner button[data-a=go] { background: var(--gold-2, #d4a843); color: #111; border-color: transparent; }
