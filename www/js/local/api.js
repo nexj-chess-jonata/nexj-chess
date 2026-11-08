@@ -410,8 +410,10 @@
         obj = JSON.parse(row.payload);
       }
     } catch (e) { return error("Não consegui ler esse arquivo de backup."); }
-    return json(restoreFrom(obj));
-  });
+    const out = restoreFrom(obj);
+    try { await S.flush(); } catch (_) {}      // garante que gravou no aparelho antes de recarregar
+    return json(out);
+  }, { auth: false });
 
   // ---- treino
   route("GET", "/api/training", () => { const p = currentPlayer(), d = K.Daily.overview(p); d.user = playerDict(p); return json(d); });
