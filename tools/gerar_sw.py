@@ -15,7 +15,7 @@ js = f'''/* Nex-J Chess — cache offline (gerado por tools/gerar_sw.py; não ed
 const VERSION = "nexj-{version}";
 const FILES = {json.dumps(["./"] + files, indent=1)};
 self.addEventListener("install", e => {{
-  e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES.map(u => new Request(u, {{ cache: "reload" }})))).then(() => self.skipWaiting()));
 }});
 self.addEventListener("activate", e => {{
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== VERSION && k.startsWith("nexj-")).map(k => caches.delete(k)))).then(() => self.clients.claim()));
