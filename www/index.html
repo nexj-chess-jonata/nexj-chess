@@ -69,6 +69,7 @@
         <div class="seg auth-tabs" id="authTabs">
           <button data-v="login" class="on">Entrar</button>
           <button data-v="register">Criar conta</button>
+          <button data-v="restore">Backup</button>
         </div>
         <div class="legacy-note hidden" id="legacyNote"></div>
         <form id="loginForm" autocomplete="on">
@@ -96,6 +97,11 @@
           </div>
           <button class="btn gold wide" type="submit">Criar minha conta ✨</button>
         </form>
+        <div id="restoreBox" class="hidden">
+          <p class="muted small">Já salvou um arquivo de backup (<b>nexj_backup_….json</b>)? Escolha o arquivo aqui para trazer suas contas de volta e depois é só entrar.</p>
+          <label class="btn gold wide" style="display:block;text-align:center;cursor:pointer">📂 Escolher arquivo de backup
+            <input type="file" id="authBkFile" accept=".json,application/json" style="display:none"></label>
+        </div>
         <div class="auth-error" id="authError"></div>
       </div>
     </div>
