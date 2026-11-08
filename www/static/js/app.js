@@ -1074,7 +1074,9 @@
     $("registerForm").classList.toggle("hidden", tab !== "register");
     $("recoverForm").classList.toggle("hidden", tab !== "recover");
     $("authTabs").classList.toggle("hidden", tab === "recover");
+    $("restoreBox").classList.toggle("hidden", tab !== "restore");
     $("authError").textContent = "";
+    if (tab === "restore") return;
     const form = tab === "login" ? $("loginForm") : tab === "register" ? $("registerForm") : $("recoverForm");
     setTimeout(() => form.querySelector("input").focus(), 50);
   }
@@ -1624,6 +1626,19 @@
   });
   document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => switchView(b.dataset.view));
   $("authTabs").querySelectorAll("button").forEach(b => b.onclick = () => setAuthTab(b.dataset.v));
+  $("authBkFile").onchange = async e => {
+    const file = e.target.files[0]; if (!file) return;
+    if (!confirm('Restaurar o backup "' + file.name + '"?\n\nAs contas do arquivo voltam para este aparelho. Antes disso o jogo guarda uma cópia do que existe agora.')) { e.target.value = ""; return; }
+    try {
+      const fd = new FormData(); fd.append("file", file);
+      const res = await fetch("/api/backups/restore", { method: "POST", body: fd });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || "Erro ao restaurar");
+      alert("✅ Backup restaurado! " + d.restored.players + " conta(s). Agora é só entrar.");
+      location.reload();
+    } catch (err) { $("authError").textContent = err.message; }
+    e.target.value = "";
+  };
   $("loginForm").addEventListener("submit", e => submitAuth(e, "login"));
   $("recoverForm").addEventListener("submit", e => submitAuth(e, "recover"));
   $("forgotLink").onclick = () => setAuthTab("recover");
